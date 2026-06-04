@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import Image from "next/image";
 import { 
   QrCode, 
@@ -12,16 +12,80 @@ import {
   Wallet
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 
 export default function PaymentPage() {
   const [activeTab, setActiveTab] = useState<"qris" | "transfer">("qris");
   const [copied, setCopied] = useState(false);
+  
+  const containerRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const bgRef1 = useRef<HTMLDivElement>(null);
+  const bgRef2 = useRef<HTMLDivElement>(null);
 
   const bankDetails = {
     name: "YANUAR ARDHIKA",
     bank: "Bank Mandiri",
     number: "1430026836864",
   };
+
+  // GSAP Entrance & Interactions
+  useGSAP(() => {
+    const tl = gsap.timeline();
+
+    // Reset initial states for GSAP
+    gsap.set([bgRef1.current, bgRef2.current], { opacity: 0, scale: 0 });
+    gsap.set(cardRef.current, { opacity: 0, y: 100, rotateX: -20 });
+
+    tl.to([bgRef1.current, bgRef2.current], {
+      opacity: 1,
+      scale: 1,
+      duration: 2,
+      stagger: 0.5,
+      ease: "elastic.out(1, 0.8)",
+    })
+    .to(cardRef.current, {
+      opacity: 1,
+      y: 0,
+      rotateX: 0,
+      duration: 1.5,
+      ease: "expo.out",
+    }, "-=1.5");
+
+    // Mouse movement parallax effect
+    const handleMouseMove = (e: MouseEvent) => {
+      const { clientX, clientY } = e;
+      const xPos = (clientX / window.innerWidth - 0.5) * 20;
+      const yPos = (clientY / window.innerHeight - 0.5) * 20;
+
+      gsap.to(cardRef.current, {
+        rotationY: xPos,
+        rotationX: -yPos,
+        x: xPos * 0.5,
+        y: yPos * 0.5,
+        duration: 1,
+        ease: "power2.out",
+      });
+
+      gsap.to(bgRef1.current, {
+        x: xPos * 2,
+        y: yPos * 2,
+        duration: 2,
+        ease: "power1.out",
+      });
+
+      gsap.to(bgRef2.current, {
+        x: -xPos * 3,
+        y: -yPos * 3,
+        duration: 2,
+        ease: "power1.out",
+      });
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, { scope: containerRef });
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(bankDetails.number);
@@ -39,71 +103,84 @@ export default function PaymentPage() {
   };
 
   return (
-    <main className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 overflow-hidden bg-black text-white font-sans">
+    <main 
+      ref={containerRef}
+      className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 overflow-hidden bg-black text-white font-sans selection:bg-red-500/30"
+      style={{ perspective: "1000px" }}
+    >
       {/* Background Decorative Elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-red-600/20 blur-[120px] rounded-full animate-pulse" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-red-900/10 blur-[120px] rounded-full" />
+      <div 
+        ref={bgRef1}
+        className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-red-600/10 blur-[120px] rounded-full" 
+      />
+      <div 
+        ref={bgRef2}
+        className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-red-900/10 blur-[120px] rounded-full" 
+      />
       
       {/* Main Glassmorphism Card */}
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
-        className="relative z-10 w-full max-w-md bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl overflow-hidden"
+      <div 
+        ref={cardRef}
+        className="relative z-10 w-full max-w-[25rem] bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[3rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.8)] overflow-hidden"
       >
-        {/* Header */}
-        <div className="p-8 pb-4 text-center">
+        {/* Header - Compact but bold */}
+        <div className="pt-8 pb-4 px-8 text-center">
           <motion.div 
-            initial={{ scale: 0.8 }}
-            animate={{ scale: 1 }}
-            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-red-600 to-red-800 mb-4 shadow-lg shadow-red-600/20"
+            whileHover={{ scale: 1.1, rotate: 10 }}
+            whileTap={{ scale: 0.9 }}
+            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-red-600 to-red-900 mb-4 shadow-[0_15px_30px_-10px_rgba(220,38,38,0.5)] cursor-pointer"
           >
             <Wallet className="w-8 h-8 text-white" />
           </motion.div>
-          <h1 className="text-3xl font-bold tracking-tight mb-2">Checkout</h1>
+          <h1 className="text-3xl text-white font-bold mb-1">
+            Pembayaran
+          </h1>
           <p className="text-white/60 text-sm">Pilih metode pembayaran yang kamu inginkan</p>
         </div>
 
-        {/* Tabs */}
-        <div className="flex p-2 gap-2 mx-6 mb-6 bg-black/40 rounded-2xl border border-white/5">
-          <button
-            onClick={() => setActiveTab("qris")}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl transition-all duration-300 ${
-              activeTab === "qris" 
-                ? "bg-red-600 text-white shadow-lg" 
-                : "hover:bg-white/5 text-white/50"
-            }`}
-          >
-            <QrCode className="w-4 h-4" />
-            <span className="text-sm font-semibold">QRIS</span>
-          </button>
-          <button
-            onClick={() => setActiveTab("transfer")}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl transition-all duration-300 ${
-              activeTab === "transfer" 
-                ? "bg-red-600 text-white shadow-lg" 
-                : "hover:bg-white/5 text-white/50"
-            }`}
-          >
-            <CreditCard className="w-4 h-4" />
-            <span className="text-sm font-semibold">Transfer</span>
-          </button>
+        {/* Tabs - Optimized Spacing */}
+        <div className="flex p-1.5 gap-1.5 mx-8 mb-5 bg-black/40 rounded-[1.5rem] border border-white/5 relative">
+          {["qris", "transfer"].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab as any)}
+              className={`flex-1 relative flex items-center justify-center gap-2 py-3 rounded-2xl transition-colors duration-500 z-10 ${
+                activeTab === tab ? "text-white" : "text-white/20 hover:text-white/40"
+              }`}
+            >
+              {activeTab === tab && (
+                <motion.div
+                  layoutId="activeTabIndicator"
+                  className="absolute inset-0 bg-gradient-to-r from-red-600 to-red-700 rounded-2xl shadow-xl"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              <span className="relative z-20 flex items-center gap-2 text-xs font-black uppercase tracking-widest">
+                {tab === "qris" ? <QrCode className="w-4 h-4" /> : <CreditCard className="w-4 h-4" />}
+                {tab}
+              </span>
+            </button>
+          ))}
         </div>
 
-        {/* Content Area */}
+        {/* Content Area - Proportional Height */}
         <div className="px-8 pb-8">
           <AnimatePresence mode="wait">
             {activeTab === "qris" ? (
               <motion.div
                 key="qris"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
+                initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 1.1, y: -10 }}
+                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                 className="flex flex-col items-center"
               >
-                <div className="relative group p-4 bg-white rounded-3xl mb-6 shadow-2xl">
-                  <div className="absolute inset-0 bg-red-600/10 rounded-3xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <div className="relative w-64 h-64 overflow-hidden rounded-xl bg-gray-100">
+                <motion.div 
+                  whileHover={{ scale: 1.05, rotate: 2 }}
+                  className="relative group p-4 bg-white rounded-[2.5rem] mb-6 shadow-2xl"
+                >
+                  <div className="absolute inset-0 rounded-2xl blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                  <div className="relative w-60 h-65 overflow-hidden rounded-xl">
                     <Image
                       src="/assets/qris-payment.jpeg"
                       alt="QRIS Payment"
@@ -112,87 +189,91 @@ export default function PaymentPage() {
                       priority
                     />
                   </div>
-                </div>
+                </motion.div>
                 
-                <div className="w-full space-y-3">
-                  <button 
+                <div className="w-full space-y-4">
+                  <motion.button 
+                    whileHover={{ scale: 1.02, y: -2 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={downloadQRIS}
-                    className="w-full flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 border border-white/10 py-4 rounded-2xl transition-all active:scale-[0.98]"
+                    className="w-full flex items-center justify-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 py-4.5 rounded-2xl transition-all shadow-lg"
                   >
                     <Download className="w-5 h-5 text-red-500" />
-                    <span className="font-semibold text-sm">Download QR Code</span>
-                  </button>
-                  <p className="text-center text-xs text-white/40 px-4">
-                    Scan menggunakan aplikasi m-banking atau e-wallet favoritmu
+                    <span className="font-black text-[11px] uppercase tracking-widest">Simpan QR Code</span>
+                  </motion.button>
+                  <p className="text-center text-[9px] text-white/20 px-6 leading-relaxed font-bold uppercase tracking-tight">
+                    Scan QRIS di atas untuk membayar
                   </p>
                 </div>
               </motion.div>
             ) : (
               <motion.div
                 key="transfer"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-6"
+                initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 1.1, y: -10 }}
+                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                className="space-y-4"
               >
-                <div className="bg-gradient-to-br from-red-600/20 to-black border border-red-500/20 p-6 rounded-3xl relative overflow-hidden group">
-                   <div className="absolute top-0 right-0 p-4">
+                <motion.div 
+                  whileHover={{ y: -6, scale: 1.02 }}
+                  className="bg-gradient-to-br from-red-600/20 via-black/40 to-black/60 border border-white/10 p-10 rounded-[2.5rem] relative overflow-hidden group shadow-xl"
+                >
+                   <div className="absolute top-0 right-0 p-7 opacity-10 group-hover:opacity-30 transition-opacity duration-700">
                      <Image 
                        src="/assets/logo-mandiri.svg" 
                        alt="Mandiri" 
-                       width={80} 
-                       height={30} 
-                       className="opacity-80 brightness-0 invert"
+                       width={90} 
+                       height={35} 
+                       className="brightness-0 invert"
                      />
                    </div>
                    
                    <div className="relative z-10">
-                     <p className="text-white/40 text-xs uppercase tracking-widest mb-4 font-bold">Bank Mandiri</p>
+                     <p className="text-red-500 text-[9px] uppercase tracking-[0.4em] mb-4 font-black">Transfer Bank</p>
                      <div className="flex items-center justify-between group/number cursor-pointer" onClick={copyToClipboard}>
                         <div>
-                          <p className="text-2xl font-mono tracking-wider mb-1">14300 26836 864</p>
-                          <p className="text-white/80 font-medium">YANUAR ARDHIKA</p>
+                          <p className="text-lg font-mono tracking-[0.1em] mb-1.5 text-white/90">14300 26836 864</p>
+                          <p className="text-white/30 text-[10px] font-black uppercase tracking-widest">YANUAR ARDHIKA</p>
                         </div>
-                        <div className={`p-2 rounded-lg transition-colors ${copied ? 'bg-green-500/20 text-green-400' : 'bg-white/5 text-white/40 group-hover/number:text-white'}`}>
-                          {copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
-                        </div>
+                        <motion.div 
+                          animate={copied ? { scale: [1, 1.25, 1] } : {}}
+                          className={`p-2.5 rounded-2xl transition-all duration-500 ${copied ? 'bg-green-500 text-white shadow-lg' : 'bg-white/5 text-white/20 group-hover/number:bg-white/10'}`}
+                        >
+                          {copied ? <Check className="w-2.5 h-2.5" /> : <Copy className="w-5 h-5" />}
+                        </motion.div>
                      </div>
                    </div>
-                </div>
+                </motion.div>
 
-                <div className="space-y-3">
-                  <div className="flex items-start gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
-                    <div className="w-8 h-8 rounded-full bg-red-600/20 flex items-center justify-center shrink-0">
-                      <ShieldCheck className="w-4 h-4 text-red-500" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold mb-1">Verifikasi Otomatis</p>
-                      <p className="text-xs text-white/40 leading-relaxed">Pastikan nama pengirim sesuai dengan yang terdaftar untuk proses lebih cepat.</p>
-                    </div>
+                <div className="p-4 rounded-[2rem] bg-white/[0.03] border border-white/5 flex items-center gap-4.5">
+                  <div className="w-11 h-11 rounded-2xl bg-red-600/10 flex items-center justify-center shrink-0 border border-red-600/20 shadow-inner">
+                    <ShieldCheck className="w-6 h-6 text-red-500" />
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-black uppercase tracking-widest mb-1">Verifikasi Instan</p>
+                    <p className="text-[9px] text-white/20 leading-tight font-bold uppercase">Konfirmasi otomatis setelah transfer.</p>
                   </div>
                 </div>
 
-                <button 
+                <motion.button 
+                  whileHover={{ scale: 1.02, y: -2, boxShadow: "0 20px 40px -10px rgba(220,38,38,0.4)" }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={copyToClipboard}
-                  className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 py-4 rounded-2xl transition-all shadow-lg shadow-red-600/20 active:scale-[0.98]"
+                  className="w-full flex items-center justify-center gap-3 bg-red-600 hover:bg-red-500 py-4.5 rounded-2xl transition-all shadow-xl"
                 >
-                  <span className="font-semibold text-sm">{copied ? "Berhasil Disalin!" : "Salin Nomor Rekening"}</span>
-                </button>
+                  <span className="font-black text-xs uppercase tracking-[0.2em]">{copied ? "Berhasil Disalin!" : "Salin Rekening"}</span>
+                </motion.button>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
+      </div>
 
-        {/* Footer info */}
-        <div className="p-6 bg-white/5 border-t border-white/10 flex items-center justify-center gap-2">
-           <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-           <p className="text-[10px] text-white/40 uppercase tracking-[0.2em] font-bold">Secure Payment Gateway</p>
-        </div>
-      </motion.div>
-
-      {/* Background patterns */}
-      <div className="fixed inset-0 pointer-events-none opacity-20" 
-           style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, #ffffff11 1px, transparent 0)', backgroundSize: '40px 40px' }} />
+      {/* GSAP Managed Background Dots */}
+      <div className="fixed inset-0 pointer-events-none opacity-[0.05]" 
+           style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, #ffffff 1px, transparent 0)', backgroundSize: '50px 50px' }} />
     </main>
   );
 }
+
