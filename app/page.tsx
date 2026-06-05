@@ -140,10 +140,10 @@ export default function PaymentPage() {
 
         {/* Tabs - Optimized Spacing */}
         <div className="flex p-1.5 gap-1.5 mx-8 mb-5 bg-black/40 rounded-[1.5rem] border border-white/5 relative">
-          {["qris", "transfer"].map((tab) => (
+          {(["qris", "transfer"] as const).map((tab) => (
             <button
               key={tab}
-              onClick={() => setActiveTab(tab as any)}
+              onClick={() => setActiveTab(tab)}
               className={`flex-1 relative flex items-center justify-center gap-2 py-3 rounded-2xl transition-colors duration-500 z-10 ${
                 activeTab === tab ? "text-white" : "text-white/20 hover:text-white/40"
               }`}
@@ -180,12 +180,13 @@ export default function PaymentPage() {
                   className="relative group p-4 bg-white rounded-[2.5rem] mb-6 shadow-2xl"
                 >
                   <div className="absolute inset-0 rounded-2xl blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                  <div className="relative w-60 h-65 overflow-hidden rounded-xl">
+                  <div className="relative w-60 overflow-hidden rounded-xl">
                     <Image
                       src="/assets/qris-payment.jpeg"
                       alt="QRIS Payment"
-                      fill
-                      className="object-cover"
+                      width={240}
+                      height={340}
+                      className="w-full h-auto"
                       priority
                     />
                   </div>
