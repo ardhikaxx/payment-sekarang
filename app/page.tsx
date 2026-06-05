@@ -220,12 +220,13 @@ export default function PaymentPage() {
                   whileHover={{ y: -6, scale: 1.02 }}
                   className="bg-gradient-to-br from-red-600/20 via-black/40 to-black/60 border border-white/10 p-10 rounded-[2.5rem] relative overflow-hidden group shadow-xl"
                 >
-                   <div className="absolute top-0 right-0 p-7 opacity-10 group-hover:opacity-30 transition-opacity duration-700">
+                   <div className="absolute top-0 right-0 p-5 opacity-10 group-hover:opacity-30 transition-opacity duration-700">
                      <Image 
                        src="/assets/logo-mandiri.svg" 
                        alt="Mandiri" 
-                       width={90} 
-                       height={35} 
+                       width={70} 
+                       height={25} 
+                       style={{ height: "auto" }}
                        className="brightness-0 invert"
                      />
                    </div>
